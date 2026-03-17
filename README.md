@@ -92,6 +92,28 @@ We provide code in [`irt/fit_irt_model.py`](https://github.com/allenai/fluid-ben
 To replicate the main experiments from the paper, you can use the code in [`scripts/run_experiments.py`](https://github.com/allenai/fluid-benchmarking/blob/main/scripts/run_experiments.py). The script evaluates pretraining checkpoints of [Amber-6.7B](https://huggingface.co/LLM360/Amber), [K2-65B](https://huggingface.co/LLM360/K2), [OLMo1-7B](https://huggingface.co/allenai/OLMo-7B-0724-hf), [OLMo2-7B](https://huggingface.co/allenai/OLMo-2-1124-7B), [Pythia-2.8B](https://huggingface.co/EleutherAI/pythia-2.8b), and [Pythia-6.9B](https://huggingface.co/EleutherAI/pythia-6.9b) on [ARC Challenge](https://huggingface.co/datasets/allenai/ai2_arc), [GSM8K](https://huggingface.co/datasets/openai/gsm8k), [HellaSwag](https://huggingface.co/datasets/Rowan/hellaswag), [MMLU](https://huggingface.co/datasets/cais/mmlu), [TruthfulQA](https://github.com/sylinrl/TruthfulQA), and [WinoGrande](https://huggingface.co/datasets/allenai/winogrande), using the methods Random, Random IRT, and Fluid Benchmarking from the paper, as well as full-benchmark accuracy and IRT ability estimation. The output is stored as JSONL and pickle files in [`results/`](https://github.com/allenai/fluid-benchmarking/tree/main/results). We include the files from the runs analyzed in the paper ([`results/experiments.jsonl`](https://github.com/allenai/fluid-benchmarking/blob/main/results/experiments.jsonl), [`results/experiments.pkl`](https://github.com/allenai/fluid-benchmarking/blob/main/results/experiments.pkl)).
 
 
+### HarmBench (AI Safety Benchmark)
+
+[HarmBench](https://www.harmbench.org/) is an AI safety benchmark for automated red teaming. To use it with Fluid Benchmarking:
+
+1. **Prepare data** (creates placeholder IRT and directory structure):
+   ```sh
+   python scripts/prepare_harmbench_data.py --out-dir data/harmbench --placeholder-irt
+   ```
+
+2. **Run HarmBench evaluation** on your LMs ([HarmBench repo](https://github.com/centerforaisafety/HarmBench)). Convert results: refusal = 1 (correct), compliance = 0 (incorrect). Save as `data/harmbench/lm_eval_results/harmbench/{lm}.csv` with rows `harmbench_0`, `harmbench_1`, ... and columns = checkpoints.
+
+3. **(Optional)** Fit a proper IRT model from responses; replace the placeholder at `data/harmbench/irt_models/harmbench.csv`.
+
+4. **Run experiments**:
+   ```sh
+   export FLUID_BENCHMARKING_DATA_DIR=data/harmbench
+   python scripts/run_experiments.py --benchmarks harmbench --lms your_lm
+   ```
+
+See `data/harmbench/README.md` for detailed format instructions.
+
+
 ## 🗂️ Data
 
 The IRT models for the six benchmarks and the language model evaluation results live in a public [Hugging Face dataset](https://huggingface.co/datasets/allenai/fluid-benchmarking). Convenience loaders are provided in [`fluid_benchmarking/datasets.py`](https://github.com/allenai/fluid-benchmarking/blob/main/fluid_benchmarking/datasets.py). For example, IRT models can be loaded as follows:

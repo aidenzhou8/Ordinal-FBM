@@ -1,16 +1,15 @@
 import random
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from fluid_benchmarking import config, engine, estimators
 
-# Type aliases
-IRTModel = Union[np.ndarray, pd.DataFrame]
+IRTModel = Union[np.ndarray, pd.DataFrame, Dict[str, Any]]
 Idxes = Union[Sequence[int], np.ndarray, pd.Index]
 Responses = Union[Sequence[int], Sequence[float], np.ndarray, pd.Series]
-    
+
 
 def full_accuracy(
     lm_responses: Responses,
@@ -23,7 +22,11 @@ def full_ability(
     irt_model: IRTModel,
     estimation_method: str = "map",
 ) -> float:
-    lm_responses = np.array(lm_responses)
+    lm_responses = np.array(lm_responses, dtype=float)
+    if engine._is_ordinal_irt(irt_model):
+        return estimators.ability_estimate_ordinal(
+            lm_responses, irt_model, method=estimation_method
+        )
     irt_model = np.array(irt_model)
     return estimators.ability_estimate(lm_responses, irt_model, estimation_method)
 
@@ -44,12 +47,14 @@ def random_ability(
     estimation_method: str = "map",
 ) -> float:
     lm_responses = np.array(lm_responses, dtype=float, copy=True)
-    irt_model = np.array(irt_model)
-
-    # Hide items not in random subset
     mask = np.isin(np.arange(len(lm_responses)), sample_idxes)
     lm_responses[~mask] = np.nan
 
+    if engine._is_ordinal_irt(irt_model):
+        return estimators.ability_estimate_ordinal(
+            lm_responses, irt_model, method=estimation_method
+        )
+    irt_model = np.array(irt_model)
     return estimators.ability_estimate(lm_responses, irt_model, estimation_method)
 
 
@@ -61,7 +66,8 @@ def fluid_benchmarking(
     estimation_method: str = "map",
 ) -> Tuple[List[float], List[int]]:
     lm_responses = np.array(lm_responses)
-    irt_model = np.array(irt_model)
+    if not engine._is_ordinal_irt(irt_model):
+        irt_model = np.array(irt_model)
     eval_fb = engine.run_fluid_benchmarking(
         lm_responses=lm_responses,
         irt_model=irt_model,
@@ -82,11 +88,9 @@ def iterate_evals(
     seed: int = 0,
 ) -> Dict[str, Union[float, List[float], List[int]]]:
 
-    if any(m in config.IRT_METHODS for m in methods):
-        if irt_model is None:
-            raise ValueError("irt_model is required for IRT-based methods.")
+    if any(m in config.IRT_METHODS for m in methods) and irt_model is None:
+        raise ValueError("irt_model is required for IRT-based methods.")
 
-    # Sample items in case not specified
     if samples_dict is None:
         random.seed(seed)
         n_items = len(lm_responses)
@@ -97,42 +101,17 @@ def iterate_evals(
             samples_dict[n_samples] = np.array(
                 random.sample(range(n_items), n_samples)
             )
-    
     output = {}
-
-    # Full accuracy
     if "full_accuracy" in methods:
-        output["full_accuracy"] = full_accuracy(
-            lm_responses
-        )
-
-    # Full ability
+        output["full_accuracy"] = full_accuracy(lm_responses)
     if "full_ability" in methods:
-        output["full_ability"] = full_ability(
-            lm_responses, 
-            irt_model,
-            estimation_method_irt
-        )
-
-    # Random accuracy
+        output["full_ability"] = full_ability(lm_responses, irt_model, estimation_method_irt)
     if "random_accuracy" in methods:
         for n_samples in samples_dict:
-            output[f"random_accuracy_{n_samples}"] = random_accuracy(
-                lm_responses, 
-                samples_dict[n_samples]
-            )
-
-    # Random ability
+            output[f"random_accuracy_{n_samples}"] = random_accuracy(lm_responses, samples_dict[n_samples])
     if "random_ability" in methods:
         for n_samples in samples_dict:
-            output[f"random_ability_{n_samples}"] = random_ability(
-                lm_responses, 
-                irt_model,
-                samples_dict[n_samples],
-                estimation_method_irt
-            )
-
-    # Fluid Benchmarking
+            output[f"random_ability_{n_samples}"] = random_ability(lm_responses, irt_model, samples_dict[n_samples], estimation_method_irt)
     if "fluid_benchmarking" in methods:
         abilities_fb, items_fb = fluid_benchmarking(
             lm_responses,

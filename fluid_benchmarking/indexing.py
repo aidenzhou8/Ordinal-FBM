@@ -4,6 +4,7 @@ import pandas as pd
 def id2benchmark(
     item_id: str,
 ) -> str:
+    """Extract benchmark name from item ID. E.g. harmbench_0 -> harmbench, hellaswag_760 -> hellaswag."""
     benchmark = "_".join(item_id.split("_")[:-1])
     return "mmlu" if benchmark.startswith("mmlu") else benchmark
 

@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 # Hugging Face dataset repo ID
 HF_REPO_ID = "allenai/fluid-benchmarking"
 
@@ -16,13 +19,22 @@ LMS = [
 ]
 
 BENCHMARKS = [
-    "arc_challenge", 
-    "gsm8k", 
+    "arc_challenge",
+    "gsm8k",
     "hellaswag",
     "truthfulqa_mc2",
     "winogrande",
     "mmlu",
+    "harmbench",
 ]
+
+# Optional: local data directory for benchmarks not in the default HF dataset.
+# If set (e.g. via env FLUID_BENCHMARKING_DATA_DIR), load IRT and LM eval from:
+#   {data_dir}/irt_models/{benchmark}.csv
+#   {data_dir}/lm_eval_results/{benchmark}/{lm}.csv
+# Use for harmbench - see scripts/prepare_harmbench_data.py
+_DATA_DIR = os.environ.get("FLUID_BENCHMARKING_DATA_DIR")
+DATA_DIR = Path(_DATA_DIR) if _DATA_DIR else None
 
 METHODS = [
     "full_accuracy",
@@ -40,6 +52,10 @@ IRT_METHODS = [
 
 # Default parameters for IRT-based methods and Fluid Benchmarking
 ESTIMATION_METHOD_IRT = "map"
+
+# Ordinal: SCORE_VALUES + IRT_MODEL_TYPE in (grm, gpcm). Continuous: IRT_MODEL_TYPE="continuous"
+SCORE_VALUES = None
+IRT_MODEL_TYPE = "2pl"
 
 # Default evaluation sample sizes
 N_SAMPLES_LIST = (
