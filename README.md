@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.md)
 [![Upstream](https://img.shields.io/badge/upstream-allenai%2Ffluid--benchmarking-111)](https://github.com/allenai/fluid-benchmarking)
 
-**Repository:** https://github.com/aidenzhou8/fluid-benchmarking-ordinal
+**Repository:** https://github.com/aidenzhou8/Ordinal-FBM
 
 </div>
 
@@ -16,11 +16,9 @@
 
 ## Summary
 
-[Fluid Benchmarking](https://arxiv.org/abs/2509.11106) uses **Item Response Theory (IRT)** and **maximum Fisher information (MFI)** to adaptively evaluate language models with fewer items than a full benchmark. The original release assumes **binary** (correct/incorrect) responses and **2PL** IRT.
+[Fluid Benchmarking](https://arxiv.org/abs/2509.11106) uses **Item Response Theory (IRT)** and **Computerized Adaptive Testing (CAT)** to adaptively evaluate language models, achieving reduced costs and enhanced evaluation quality. The original release is constrained to **binary** responses and **2PL** IRT.
 
-This project **extends** that stack so adaptive evaluation works for a **much larger set of benchmarks** that use **ordinal** or **continuous** scores—for example multi-level safety ratings, Likert-style judgments, or metrics in \([0,1]\) (e.g. ROUGE, normalized judge scores).
-
-**What you get**
+This project **extends** that stack so adaptive evaluation works for a **much larger set of benchmarks** that use **ordinal** or **continuous** scores: for instance, graded safety tasks, Likert scale questions, or metrics in $[0,1]$.
 
 | Feature | Models |
 |--------|--------|
