@@ -23,7 +23,7 @@ This project **extends** that stack so adaptive evaluation works for a **much la
 | Feature | Models |
 |--------|--------|
 | Ordinal IRT | **GRM** (Graded Response), **GPCM** (Generalized Partial Credit) |
-| Continuous IRT | Homoskedastic Gaussian-on-sigmoid (`continuous`) and **heteroskedastic** continuous-cat style (`continuous_cat`) |
+| Continuous IRT | **continuous** — [0,1] scores as noisy observations around a predicted mean; spread of noise is **fixed**. **continuous_cat** — same setup, but **noise is larger when the prediction is near 0.5 and smaller near 0 or 1** ([continuous-cat](https://github.com/trismik/continuous-cat)–style). |
 | Same evaluation API | `fluid_benchmarking()`, `full_ability()`, `iterate_evals()` — unchanged call pattern; IRT type is inferred from the model object |
 
 See **[docs/PROJECT.md](docs/PROJECT.md)** for design detail and **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for file-level map.
