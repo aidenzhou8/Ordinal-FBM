@@ -1,6 +1,6 @@
 <div align="center">
 
-# Adaptive Benchmarking for Ordinal and Continuous LLM Evaluation
+# Adaptive Benchmarking for Ordinal / Continuous LLM Evaluation
 
 **Extending [Fluid Benchmarking](https://github.com/allenai/fluid-benchmarking) beyond binary outcomes**
 
