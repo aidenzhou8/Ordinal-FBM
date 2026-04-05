@@ -59,7 +59,7 @@ def fisher_information_continuous(theta: float, a: np.ndarray, b: np.ndarray, si
 def fisher_information_continuous_cat(theta: float, a: np.ndarray, b: np.ndarray, D: float = 1.0, epsilon: float = 1e-15) -> np.ndarray:
     """Fisher information for continuous-cat (heteroskedastic) model.
 
-    From https://github.com/trismik/continuous-cat: FI = a² × μ(1-μ)
+    Balkir et al., arXiv:2601.13885 (https://arxiv.org/html/2601.13885v1): FI = a² × μ(1-μ)
     where μ = sigmoid(θ - b). Variance σ² = μ(1-μ)/a² matches Bernoulli structure.
     """
     z = D * (float(theta) - np.asarray(b, dtype=float))

@@ -1,16 +1,12 @@
-<div align="center">
-
 # Adaptive Benchmarking for Ordinal / Continuous LLM Evaluation
 
 **Extending [Fluid Benchmarking](https://github.com/allenai/fluid-benchmarking) beyond binary outcomes**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.md)
-[![Upstream](https://img.shields.io/badge/upstream-allenai%2Ffluid--benchmarking-111)](https://github.com/allenai/fluid-benchmarking)
+[Python 3.10+](https://www.python.org/downloads/)
+[License](LICENSE.md)
+[Upstream](https://github.com/allenai/fluid-benchmarking)
 
-**Repository:** https://github.com/aidenzhou8/Ordinal-FBM
-
-</div>
+**Repository:** [https://github.com/aidenzhou8/Ordinal-FBM](https://github.com/aidenzhou8/Ordinal-FBM)
 
 ---
 
@@ -20,13 +16,13 @@
 
 This project **extends** that stack so adaptive evaluation works for a **much larger set of benchmarks** that use **ordinal** or **continuous** scores: for instance, graded safety tasks, Likert scale questions, or metrics in $[0,1]$.
 
-| Feature | Models |
-|--------|--------|
-| Ordinal IRT | **GRM** (Graded Response), **GPCM** (Generalized Partial Credit) |
-| Continuous IRT | **continuous** — [0,1] scores as noisy observations around a predicted mean; spread of noise is **fixed**. **continuous_cat** — same setup, but **noise is larger when the prediction is near 0.5 and smaller near 0 or 1** ([continuous-cat](https://github.com/trismik/continuous-cat)–style). |
-| Same evaluation API | `fluid_benchmarking()`, `full_ability()`, `iterate_evals()` — unchanged call pattern; IRT type is inferred from the model object |
 
-See **[docs/PROJECT.md](docs/PROJECT.md)** for design detail and **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for file-level map.
+| Feature             | Models                                                                                                                                                                                                                                                                                                                     |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ordinal IRT         | **GRM** (Graded Response), **GPCM** (Generalized Partial Credit)                                                                                                                                                                                                                                                           |
+| Continuous IRT      | **continuous**: $[0,1]$ scores as noisy observations around a predicted mean; the spread of noise is **fixed**. **continuous_cat**: same setup, but **noise is increased when the prediction is near 0.5 and decreased near 0 or 1**, adhering to the formulation of [Balkir et al.](https://arxiv.org/html/2601.13885v1). |
+| Same evaluation API | `fluid_benchmarking()`, `full_ability()`, `iterate_evals()`— unchanged API, IRT type is inferred from the model object                                                                                                                                                                                                     |
+
 
 ---
 
@@ -57,53 +53,66 @@ pip install -e ".[irt]"
 pip install -e ".[ordinal]"
 ```
 
-Or everything: `pip install -e ".[irt,ordinal]"`.
-
 ---
 
 ## Quick start
 
-### Binary 2PL (original behavior)
-
-Unchanged from upstream: load 2PL parameters from the [Hugging Face dataset](https://huggingface.co/datasets/allenai/fluid-benchmarking) and run adaptive benchmarking.
+Load a 2PL model from the [Hugging Face dataset](https://huggingface.co/datasets/allenai/fluid-benchmarking), then run adaptive benchmarking:
 
 ```python
 from fluid_benchmarking import evaluation
 
 abilities_fb, items_fb = evaluation.fluid_benchmarking(
     lm_responses=lm_responses,
-    irt_model=irt_model,  # (n_items, 2) array [a, b]
+    irt_model=irt_model,  # (n_items, 2): columns [a, b]
     start_ability=0.0,
     n_max=100,
     estimation_method="map",
 )
 ```
 
-### Ordinal or continuous IRT
+Same API for **ordinal or continuous** IRT: pass a **dict** `irt_model` (`model_type` plus item parameters). To start,
 
-1. Set `FLUID_BENCHMARKING_DATA_DIR` to a directory containing `irt_models/` and `lm_eval_results/`.
-2. Fit or export ordinal/continuous item parameters (see **Fitting IRT** below).
-3. Pass a **dict** IRT model (with `model_type`) instead of a 2PL array.
+```python
+import numpy as np
+from fluid_benchmarking import evaluation
 
-```bash
-export FLUID_BENCHMARKING_DATA_DIR=/path/to/your/data
-python scripts/run_experiments.py \
-  --irt-model-type grm \
-  --score-values 0,0.25,0.5,0.75,1 \
-  --benchmarks harmbench \
-  --lms your_lm
+irt_model = {
+    "model_type": "continuous_cat",
+    "a": np.array([1.0, 1.0, 1.0]),
+    "diff": np.array([0.0, 0.5, -0.2]),
+}
+lm_responses = np.array([0.7, 0.55, 0.9])  # [0, 1] scores, one per item
+
+abilities_fb, items_fb = evaluation.fluid_benchmarking(
+    lm_responses=lm_responses,
+    irt_model=irt_model,
+    start_ability=0.0,
+    n_max=100,
+    estimation_method="map",
+)
 ```
 
-Supported `--irt-model-type` values: `2pl`, `grm`, `gpcm`, `continuous`, `continuous_cat`.
+After you fit item parameters (see **Fitting IRT models**), point the loaders at your data root:
+
+1. Set the environment variable `FLUID_BENCHMARKING_DATA_DIR` to the directory that contains `irt_models/` and `lm_eval_results/`.
+2. Call `datasets.load_ordinal_irt_model(benchmark_name, model_type)` to read `{benchmark}_{model_type}_items.csv` and `_metadata.json`, then `datasets.align_ordinal_irt_to_items(irt_model, item_ids)` so rows match your LM evaluation CSV.
+3. Load LM scores with `datasets.load_lm_eval_results(..., binary=False)`; for GRM/GPCM, pass `score_values` so raw scores map to category indices. Continuous modes use raw scores in [0,1].
+
+The `irt_model` dict always includes `model_type` and `a`; ordinal models add `thresholds` or `steps`, naive continuous adds `diff` and `sigma`, and **continuous_cat** adds `diff` only (heteroskedastic variance is implied).
+
+For benchmarks across LMs and checkpoints, use `scripts/run_experiments.py` with `--irt-model-type` set to `2pl`, `grm`, `gpcm`, `continuous`, or `continuous_cat`, and `--score-values` when using ordinal types that need explicit score levels.
 
 ---
 
 ## Fitting IRT models
 
-| Script | Use |
-|--------|-----|
-| `irt/fit_irt_model.py` | Binary **2PL** (py-irt), upstream-compatible |
+
+| Script                         | Use                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `irt/fit_irt_model.py`         | Binary **2PL** (py-irt), upstream-compatible                                                          |
 | `irt/fit_ordinal_irt_model.py` | **GRM**, **GPCM**, **continuous**, **continuous_cat** from JSONL (`subject_id`, `responses` per item) |
+
 
 Example:
 
@@ -118,49 +127,12 @@ Outputs `{stem}_{model_type}_items.csv` and `_metadata.json` for use with `load_
 
 ---
 
-## Verify the pipeline
-
-```bash
-python scripts/verify_pipeline.py
-```
-
----
-
-## HarmBench and local data
-
-HarmBench-style workflows (local CSVs, optional placeholder IRT) are described in **`data/harmbench/README.md`** and **`scripts/prepare_harmbench_data.py`**.
-
----
-
-## Reproducing upstream paper experiments
-
-The **`scripts/run_experiments.py`** flow for standard benchmarks and Hugging Face data follows the original Fluid Benchmarking paper; use `--irt-model-type 2pl` for the published binary setup.
-
----
-
-## Project structure (extension highlights)
-
-```
-fluid_benchmarking/   # Core: evaluation, engine, datasets, IRT utils
-irt/
-  ordinal_models.py     # GRM, GPCM, continuous, continuous_cat (Pyro)
-  fit_ordinal_irt_model.py
-scripts/
-  run_experiments.py
-  verify_pipeline.py
-docs/
-  PROJECT.md
-  ARCHITECTURE.md
-```
-
----
-
 ## Credits
 
 - **Fluid Benchmarking** — Valentin Hofmann et al., *Second Conference on Language Modeling (COLM), 2025*. [Paper](https://arxiv.org/abs/2509.11106) · [Blog](https://allenai.org/blog/fluid-benchmarking) · [Dataset](https://huggingface.co/datasets/allenai/fluid-benchmarking).
-- **Continuous heteroskedastic formulation** — aligned with ideas from [continuous-cat](https://github.com/trismik/continuous-cat) (Balkir et al., arXiv:2601.13885).
+- **Continuous heteroskedastic formulation** — [Balkir et al.](https://arxiv.org/html/2601.13885v1), *Confident Rankings with Fewer Items: Adaptive LLM Evaluation with Continuous Scores* (arXiv:2601.13885).
 
-This repository is an **independent extension**; it is not endorsed by Ai2. Cite the original work when using Fluid Benchmarking methods.
+This repository is an **independent extension**. It is not endorsed by AI2. Cite the original work when using Fluid Benchmarking methods.
 
 ```bibtex
 @inproceedings{hofmann2025fluid,
@@ -175,10 +147,4 @@ This repository is an **independent extension**; it is not endorsed by Ai2. Cite
 
 ## License
 
-Apache 2.0 — see [LICENSE.md](LICENSE.md) (same as upstream).
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Apache 2.0 — see [LICENSE.md](LICENSE.md).

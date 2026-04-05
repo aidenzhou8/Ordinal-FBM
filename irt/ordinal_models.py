@@ -317,7 +317,7 @@ class ContinuousSafetyModel(BaseSafetyIrt):
 
 class ContinuousCategoricalModel(BaseSafetyIrt):
     """Heteroskedastic Gaussian with σ² = μ(1-μ)/a².
-    Adapted from https://github.com/trismik/continuous-cat.
+    See Balkir et al., arXiv:2601.13885 (https://arxiv.org/html/2601.13885v1).
     """
 
     def _obs_tensor(self, obs: np.ndarray) -> torch.Tensor:
