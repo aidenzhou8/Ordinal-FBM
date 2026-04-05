@@ -1,3 +1,7 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
 # Virtual environment
 .venv/
 venv/
@@ -18,8 +22,8 @@ build/
 # Local benchmark data (e.g. HarmBench)
 data/harmbench/
 
-# Large experiment artifacts (optional: uncomment to avoid committing)
-# results/*.pkl
+# Experiment outputs (regenerate with scripts/run_experiments.py)
+results/
 
 # IDE
 .idea/
