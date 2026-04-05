@@ -7,7 +7,6 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-D22128?logo=apache&logoColor=white)](LICENSE.md)
 [![Upstream](https://img.shields.io/badge/upstream-allenai%2Ffluid--benchmarking-555555?logo=github)](https://github.com/allenai/fluid-benchmarking)
-[![arXiv](https://img.shields.io/badge/arXiv-2509.11106-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2509.11106)
 
 **Repository:** `https://github.com/aidenzhou8/Ordinal-FBM`
 
